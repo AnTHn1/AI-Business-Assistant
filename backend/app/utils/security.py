@@ -13,12 +13,7 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
     db: Session = Depends(get_db)
 ) -> User:
-    """
-    Dependencia de FastAPI que protege endpoints.
-    """
     token = credentials.credentials
-    print(f"DEBUG - Token recibido: {token[:30]}...")
-    
     user = get_current_user_from_token(db, token)
     
     if user is None:
@@ -34,9 +29,6 @@ async def get_current_user(
 async def get_current_active_user(
     current_user: User = Depends(get_current_user)
 ) -> User:
-    """
-    Verifica que el usuario no esté desactivado.
-    """
     if not current_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

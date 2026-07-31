@@ -15,9 +15,6 @@ class WhatsAppService:
             self.client = Client(account_sid, auth_token)
 
     def send_message(self, to_number: str, from_number: str, message: str) -> dict:
-        """
-        Envía un mensaje de WhatsApp.
-        """
         if not self.client:
             raise ValueError("Twilio client not configured")
         
@@ -39,9 +36,6 @@ class WhatsAppService:
             }
 
     def receive_message(self, request_data: dict) -> dict:
-        """
-        Procesa un mensaje entrante de WhatsApp.
-        """
         return {
             "from_number": request_data.get("From", "").replace("whatsapp:", ""),
             "to_number": request_data.get("To", "").replace("whatsapp:", ""),
@@ -51,34 +45,35 @@ class WhatsAppService:
         }
 
     def generate_ai_response(self, message_history: list, business_context: str = "") -> str:
-        """
-        Genera una respuesta inteligente usando Gemini.
-        """
-        # Convertir formato de OpenAI a Gemini
-        gemini_history = []
-        for msg in message_history:
-            role = "user" if msg["role"] == "user" else "model"
-            gemini_history.append({"role": role, "content": msg["content"]})
+        if not settings.GEMINI_API_KEY:
+            return self.generate_basic_response(message_history[-1]["content"] if message_history else "")
         
-        return gemini_service.generate_response(gemini_history, business_context)
+        try:
+            gemini_history = []
+            for msg in message_history:
+                role = "user" if msg["role"] == "user" else "model"
+                gemini_history.append({"role": role, "content": msg["content"]})
+            
+            return gemini_service.generate_response(gemini_history, business_context)
+            
+        except Exception as e:
+            print(f"Error IA: {e}")
+            return self.generate_basic_response(message_history[-1]["content"] if message_history else "")
 
     def generate_basic_response(self, message_body: str) -> str:
-        """
-        Respuesta básica por palabras clave (fallback).
-        """
         message_lower = message_body.lower()
         
         if any(word in message_lower for word in ["hola", "buenos", "buenas"]):
-            return "¡Hola! 👋 Bienvenido a nuestro negocio. ¿En qué puedo ayudarte?"
+            return "¡Hola! 👋 Bienvenido a nuestro negocio. ¿En que puedo ayudarte?"
         elif any(word in message_lower for word in ["precio", "costo", "cuanto", "cuesta"]):
-            return "Para darte información de precios, ¿podrías indicarme qué servicio te interesa?"
+            return "Para darte informacion de precios, ¿podrias indicarme que servicio te interesa?"
         elif any(word in message_lower for word in ["cita", "agendar", "reservar", "hora"]):
-            return "Con gusto te ayudo a agendar una cita. ¿Qué día y hora te funciona mejor?"
+            return "Con gusto te ayudo a agendar una cita. ¿Que dia y hora te funciona mejor?"
         elif any(word in message_lower for word in ["ubicacion", "direccion", "donde", "estan"]):
-            return "Nos encontramos en [Tu dirección]. ¿Te gustaría que te envíe la ubicación?"
+            return "Nos encontramos en [Tu direccion]. ¿Te gustaria que te envie la ubicacion?"
         elif any(word in message_lower for word in ["catalogo", "productos", "servicios"]):
-            return "Te envío nuestro catálogo: [URL]. ¿Hay algo específico que te interese?"
+            return "Te envio nuestro catalogo: [URL]. ¿Hay algo especifico que te interese?"
         elif any(word in message_lower for word in ["gracias", "thank"]):
-            return "¡De nada! 😊 Estoy aquí para lo que necesites."
+            return "¡De nada! 😊 Estoy aqui para lo que necesites."
         else:
-            return "Entiendo. Déjame consultar con el equipo y te respondo en breve. ¿Es urgente?"
+            return "Entiendo. Dejame consultar con el equipo y te respondo en breve. ¿Es urgente?"

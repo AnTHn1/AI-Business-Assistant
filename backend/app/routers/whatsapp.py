@@ -8,15 +8,13 @@ from app.models.business import Business
 from app.services.whatsapp import WhatsAppService
 from app.utils.security import get_current_active_user
 from app.models.user import User
+from fastapi.responses import PlainTextResponse
 
 router = APIRouter(prefix="/whatsapp", tags=["WhatsApp"])
 
 
 @router.post("/webhook/{business_id}")
 async def whatsapp_webhook(business_id: int, request: Request, db: Session = Depends(get_db)):
-    """
-    Webhook para recibir mensajes de WhatsApp via Twilio.
-    """
     form_data = await request.form()
     data = dict(form_data)
     
@@ -27,7 +25,6 @@ async def whatsapp_webhook(business_id: int, request: Request, db: Session = Dep
     whatsapp = WhatsAppService()
     message_data = whatsapp.receive_message(data)
     
-    # Buscar o crear conversacion
     conversation = db.query(Conversation).filter(
         Conversation.business_id == business_id,
         Conversation.customer_phone == message_data["from_number"]
@@ -44,7 +41,6 @@ async def whatsapp_webhook(business_id: int, request: Request, db: Session = Dep
         db.commit()
         db.refresh(conversation)
     
-    # Guardar mensaje del cliente
     customer_message = Message(
         conversation_id=conversation.id,
         sender_type="customer",
@@ -52,18 +48,15 @@ async def whatsapp_webhook(business_id: int, request: Request, db: Session = Dep
     )
     db.add(customer_message)
     
-    # Obtener historial de mensajes para contexto
     messages = db.query(Message).filter(
         Message.conversation_id == conversation.id
     ).order_by(Message.created_at).all()
     
-    # Convertir a formato para OpenAI
     message_history = []
-    for msg in messages[-10:]:  # Ultimos 10 mensajes
+    for msg in messages[-10:]:
         role = "user" if msg.sender_type == "customer" else "assistant"
         message_history.append({"role": role, "content": msg.content})
     
-    # Generar respuesta con IA
     if business.ai_enabled and business.ai_context:
         response_text = whatsapp.generate_ai_response(
             message_history=message_history,
@@ -72,7 +65,6 @@ async def whatsapp_webhook(business_id: int, request: Request, db: Session = Dep
     else:
         response_text = whatsapp.generate_basic_response(message_data["body"])
     
-    # Guardar respuesta de la IA
     ai_message = Message(
         conversation_id=conversation.id,
         sender_type="ai",
@@ -83,11 +75,9 @@ async def whatsapp_webhook(business_id: int, request: Request, db: Session = Dep
     conversation.last_message = response_text
     db.commit()
     
-    # Responder a Twilio
     twiml = MessagingResponse()
     twiml.message(response_text)
     
-    from fastapi.responses import PlainTextResponse
     return PlainTextResponse(content=str(twiml), media_type="application/xml")
 
 
@@ -143,9 +133,6 @@ async def test_receive_message(
     body: str,
     db: Session = Depends(get_db)
 ):
-    """
-    Endpoint de prueba para simular mensaje entrante.
-    """
     business = db.query(Business).filter(Business.id == business_id).first()
     if not business:
         raise HTTPException(status_code=404, detail="Business not found")
@@ -173,7 +160,6 @@ async def test_receive_message(
     )
     db.add(customer_message)
     
-    # Obtener historial
     messages = db.query(Message).filter(
         Message.conversation_id == conversation.id
     ).order_by(Message.created_at).all()
@@ -183,7 +169,6 @@ async def test_receive_message(
         role = "user" if msg.sender_type == "customer" else "assistant"
         message_history.append({"role": role, "content": msg.content})
     
-    # Generar respuesta con IA
     whatsapp = WhatsAppService()
     if business.ai_enabled and business.ai_context:
         response_text = whatsapp.generate_ai_response(

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Save, Bot, MessageSquare, Clock, MapPin, Phone } from 'lucide-react';
+import { Save, Bot, MessageSquare } from 'lucide-react';
 
 export default function Settings() {
   const [config, setConfig] = useState({
@@ -19,8 +19,6 @@ export default function Settings() {
 
   const loadConfig = async () => {
     try {
-      const response = await api.get('/whatsapp/conversations');
-      // Por ahora usamos datos de ejemplo, luego vendrán de /business/me
       setConfig({
         name: 'Clinica Dental Demo',
         welcome_message: '¡Bienvenido a nuestra clinica! ¿En que podemos ayudarte?',
@@ -58,8 +56,6 @@ POLITICAS:
 
   const handleSave = async () => {
     setLoading(true);
-    // Aqui iria la llamada a la API para guardar
-    // await api.put('/business/1', config);
     setTimeout(() => {
       setLoading(false);
       setSaved(true);
@@ -78,7 +74,6 @@ POLITICAS:
       )}
 
       <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
-        {/* Informacion basica */}
         <div>
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <MessageSquare className="w-5 h-5 mr-2 text-blue-600" />
@@ -96,20 +91,16 @@ POLITICAS:
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Numero de WhatsApp</label>
-              <div className="flex items-center">
-                <Phone className="w-5 h-5 text-gray-400 mr-2" />
-                <input
-                  type="text"
-                  value={config.whatsapp_number}
-                  onChange={(e) => setConfig({...config, whatsapp_number: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
+              <input
+                type="text"
+                value={config.whatsapp_number}
+                onChange={(e) => setConfig({...config, whatsapp_number: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
           </div>
         </div>
 
-        {/* Mensaje de bienvenida */}
         <div>
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <MessageSquare className="w-5 h-5 mr-2 text-green-600" />
@@ -123,7 +114,6 @@ POLITICAS:
           />
         </div>
 
-        {/* Configuracion de IA */}
         <div>
           <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <Bot className="w-5 h-5 mr-2 text-purple-600" />
@@ -144,7 +134,7 @@ POLITICAS:
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Contexto del Negocio (la IA usara esta informacion para responder)
+              Contexto del Negocio
             </label>
             <textarea
               value={config.ai_context}
@@ -153,12 +143,11 @@ POLITICAS:
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Incluye precios, horarios, servicios, ubicacion y politicas. La IA usara esta informacion para responder a los clientes.
+              Incluye precios, horarios, servicios, ubicacion y politicas.
             </p>
           </div>
         </div>
 
-        {/* Boton guardar */}
         <div className="flex justify-end">
           <button
             onClick={handleSave}

@@ -10,24 +10,20 @@ from app.services.auth import (
     authenticate_user,
     create_access_token
 )
+from app.utils.security import get_current_active_user
 
-router = APIRouter(prefix="/auth", tags=["Autenticación"])
+router = APIRouter(prefix="/auth", tags=["Autenticacion"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    """
-    Registra un nuevo usuario.
-    """
-    # Verificar si el email ya existe
     existing_user = db.query(User).filter(User.email == user_data.email).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El email ya está registrado"
+            detail="El email ya esta registrado"
         )
     
-    # Crear usuario con contraseña hasheada
     new_user = User(
         email=user_data.email,
         hashed_password=get_password_hash(user_data.password),
@@ -46,17 +42,12 @@ async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
-    """
-    Inicia sesión y devuelve un token JWT.
-    
-    Usa OAuth2PasswordRequestForm para compatibilidad con Swagger UI.
-    """
     user = authenticate_user(db, form_data.username, form_data.password)
     
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email o contraseña incorrectos",
+            detail="Email o contrasena incorrectos",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
@@ -64,13 +55,7 @@ async def login(
     
     return {"access_token": access_token, "token_type": "bearer"}
 
-from app.utils.security import get_current_active_user
-
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_active_user)):
-    """
-    Obtiene los datos del usuario autenticado.
-    Requiere token JWT valido en el header Authorization.
-    """
     return current_user

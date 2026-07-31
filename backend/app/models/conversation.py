@@ -10,11 +10,11 @@ class Conversation(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     business_id = Column(Integer, ForeignKey("businesses.id"), nullable=False)
-    customer_phone = Column(String(50), nullable=False)  # Número del cliente
+    customer_phone = Column(String(50), nullable=False)
     customer_name = Column(String(255), nullable=True)
     last_message = Column(Text, nullable=True)
     is_open = Column(Boolean, default=True)
-    ai_enabled = Column(Boolean, default=True)  # IA activada para esta conversación
+    ai_enabled = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -30,7 +30,7 @@ class Message(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False)
-    sender_type = Column(String(20), nullable=False)  # 'customer', 'ai', 'human'
+    sender_type = Column(String(20), nullable=False)
     content = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
